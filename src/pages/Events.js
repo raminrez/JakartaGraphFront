@@ -59,8 +59,8 @@ export default class EventsPage extends Component {
 
     const requestBody = {
       query: `
-        mutation{
-           createEvent(eventInput:{title:"${title}",description:"${description}",date:"${date}",price:${price}}){
+        mutation CreateEvent($title: String! ,$desc :String!,$date: String!,$price: Float!){
+           createEvent(eventInput:{title: $title,description: $desc ,date: $date ,price: $price}){
             _id
             title
             description
@@ -71,7 +71,13 @@ export default class EventsPage extends Component {
             }
            }
         }
-      `
+      `,
+      variables: {
+        title: title,
+        desc: description,
+        date: date,
+        price: price
+      }
     };
 
     const token = this.context.token;
@@ -169,7 +175,50 @@ export default class EventsPage extends Component {
     });
   };
 
-  bookEventHandler = () => {};
+  bookEventHandler = () => {
+    if (!this.context.token) {
+      this.setState({ selectedEvent: null });
+      return;
+    }
+    const requestBody = {
+      query: `
+      mutation BookEvent($id:ID!) {
+  bookEvent(eventId: $id) {
+      _id
+    createdAt
+    updatedAt
+   }
+      }
+`,
+      variables: {
+        id: this.state.selectedEvent._id
+      }
+    };
+
+    const token = this.context.token;
+    fetch("http://localhost:8000/graphql", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      }
+    })
+      .then(res => {
+        if (res.status !== 200 && res.status !== 201) {
+          throw new Error("Failed!");
+        }
+        return res.json();
+      })
+      .then(resData => {
+        console.log(resData);
+        this.setState({ selectedEvent: null });
+      })
+      .catch(error => {
+        console.log(error);
+        this.setState({ isLoading: false });
+      });
+  };
 
   render() {
     return (
@@ -215,7 +264,7 @@ export default class EventsPage extends Component {
             canConfirm
             onCancel={this.modalCancelHandler}
             onConfirm={this.bookEventHandler}
-            confirmText="Book"
+            confirmText={this.context.token ? "Book" : "Confirm"}
           >
             <h1>{this.state.selectedEvent.title}</h1>
             <h2>
