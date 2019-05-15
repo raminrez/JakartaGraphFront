@@ -25,14 +25,12 @@ export default class AuthPage extends Component {
 
     let requestBody = {
       query: `
-        
         query Login($email: String!,$password: String!) {  
           login(email: $email, password: $password){
             userId
             token
             tokenExpiration
           }}
-        
       `,
       variables: {
         email: email,
